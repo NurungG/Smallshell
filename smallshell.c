@@ -55,7 +55,7 @@ static int gettok(char **outptr) { /* Get token & Place into tokbuf */
 
 	*outptr = tok;
 
-	/* strip white space */
+	/* Strip white space */
 	for (; *ptr == ' ' || *ptr == '\t'; ptr++) {
 		// empty
 	}
@@ -90,7 +90,10 @@ static int gettok(char **outptr) { /* Get token & Place into tokbuf */
 			*tok++ = *ptr++;
 		}
 	}
+
+	/* Fill last character as NULL */
 	*tok++ = '\0';
+
 	return type;
 }
 
@@ -99,8 +102,13 @@ static int runcommand(char **cline, int where, int in, int out) { /* Execute a c
 
 	/* Implement "cd" command (change directory) */
 	if (strcmp(cline[0], "cd") == 0) { 
-		if (chdir(cline[1]) == -1) {
-			perror("smallshell");
+		if (cline[2] == NULL) {
+			if (chdir(cline[1]) == -1) {
+				perror("smallshell");
+				return -1;
+			}
+		} else {
+			printf("Usage : cd [path]\n");
 			return -1;
 		}
 		return 0;
@@ -108,7 +116,12 @@ static int runcommand(char **cline, int where, int in, int out) { /* Execute a c
 
 	/* Implement "exit" command (exit the shell) */
 	if (strcmp(cline[0], "exit") == 0) {
-		exit(0);
+		if (cline[1] == NULL) {
+			exit(0);
+		} else {
+			printf("Enter \"exit\" without any words\n");
+			return -1;
+		}
 	}
 
 	/* Ignore signal (linux) */
@@ -177,8 +190,9 @@ int userin(char *p) { /* Print prompt & Read a line */
 	tok = tokbuf;
 	
 	/* Display prompt */
-	getcwd(wd, MAXBUF);
-	printf("%s%s$ ", p, wd);
+	//getcwd(wd, MAXBUF);
+	//printf("%s%s$ ", p, wd);
+	printf("%s ", p);
 	
 	/* Read a line */
 	for (count = 0;;) {
@@ -247,8 +261,9 @@ void procline() { /* Process input line */
 		case PIPELINE:
 			if (pipe(pipe_fd) == -1) printf("pipe error\n");
 			out = pipe_fd[1];
-
+			
 		/* End of command ('\n', ';', '&') */
+		/* Pipeline also keep going */
 		case EOL:
 		case SEMICOLON:
 		case AMPERSAND:
